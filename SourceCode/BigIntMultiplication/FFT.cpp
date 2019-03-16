@@ -3,37 +3,22 @@
 #include "FFT.h"
 #include "CommonMethod.h"
 
-void ExecuteRecusiveFFT(vector<unsigned int>& inputs, vector<complex<double>>& outputs)
+void ExecuteRecusiveFFT(vector<complex<double>>& inputs, vector<complex<double>>& outputs)
 {
-	size_t size = 0;
-	NormalizeSize(inputs.size(), size);
-	vector<complex<double>> fftInput(size);
-	for (size_t i = 0; i < inputs.size(); ++i)
-	{
-		fftInput[i] = inputs[i];
-	}
-	double angle = 2 * M_PI / size; //2*PI/ n;
+	double angle = 2 * M_PI / inputs.size(); //2*PI/ n;
 	complex<double> omega(cos(angle), sin(angle));
 
-	RecusiveFFT(fftInput, outputs, omega);
+	RecusiveFFT(inputs, outputs, omega);
 }
 
 void ExecuteRecusiveInvertFFT(vector<complex<double>>& inputs, vector<unsigned int>& outputs)
 {
-	size_t size = 0;
-	NormalizeSize(inputs.size(), size);
-	vector<complex<double>> invertFFTInput(size);
-	for (size_t i = 0; i < inputs.size(); ++i)
-	{
-		invertFFTInput[i] = inputs[i];
-	}
-	double angle = -2 * M_PI / size; //2*PI/ n;
+	double angle = -2 * M_PI / inputs.size(); //2*PI/ n;
 	complex<double> invertOmega(cos(angle), sin(angle));
 
-	vector<complex<double>> invertFFTOutput;
-	RecusiveInvertFFT(invertFFTInput, invertFFTOutput, invertOmega);
+	vector<complex<double>> invertFFTOutput(inputs.size());
+	RecusiveInvertFFT(inputs, invertFFTOutput, invertOmega);
 
-	outputs.resize(invertFFTOutput.size());
 	for (size_t i = 0; i < outputs.size(); ++i)
 	{
 		outputs[i] = static_cast<unsigned int>(invertFFTOutput[i].real() + 0.5);
@@ -42,19 +27,17 @@ void ExecuteRecusiveInvertFFT(vector<complex<double>>& inputs, vector<unsigned i
 
 void RecusiveFFT(vector<complex<double>>& inputs, vector<complex<double>>& outputs, complex<double>& omega)
 {
-	size_t size = inputs.size();
-	if (size == 1)
+	if (inputs.size() == 1)
 	{
-		outputs.resize(1);
 		outputs[0] = inputs[0];
 		return;
 	}
 
 	// devide step
-	size_t divideSize = size / 2;
+	size_t divideSize = inputs.size() / 2;
 	vector<complex<double>> inputsEven(divideSize);
 	vector<complex<double>> inputsOdd(divideSize);
-	for (size_t i = 0; i < size; i++)
+	for (size_t i = 0; i < inputs.size(); i++)
 	{
 		if (i % 2 == 0)
 		{
@@ -68,14 +51,14 @@ void RecusiveFFT(vector<complex<double>>& inputs, vector<complex<double>>& outpu
 
 	// recursive call with omega^2 as (n/2)th primitive root of unity 
 	complex<double> currentOmega = pow(omega, 2);
-	vector<complex<double>> outputsEven;
+	vector<complex<double>> outputsEven(divideSize);
 	RecusiveFFT(inputsEven, outputsEven, currentOmega);
-	vector<complex<double>> outputsOdd;
+	vector<complex<double>> outputsOdd(divideSize);
 	RecusiveFFT(inputsOdd, outputsOdd, currentOmega);
 
 	complex<double> x = 1; // storing power of omega
 	// combine step, using x = omega^i
-	outputs.resize(size);
+	//outputs.resize(size);
 	for (size_t i = 0; i < divideSize; ++i)
 	{
 		outputs[i] = outputsEven[i] + x * outputsOdd[i];
@@ -142,19 +125,17 @@ void NonRecusiveFFT(vector<complex<double>>& inputs)
 
 void RecusiveInvertFFT(vector<complex<double>>& inputs, vector<complex<double>>& outputs, complex<double>& invertOmega)
 {
-	size_t size = inputs.size();
-	if (size == 1)
+	if (inputs.size() == 1)
 	{
-		outputs.resize(1);
 		outputs[0] = inputs[0];
 		return;
 	}
 
 	// devide step
-	size_t divideSize = size / 2;
+	size_t divideSize = inputs.size() / 2;
 	vector<complex<double>> inputsEven(divideSize);
 	vector<complex<double>> inputsOdd(divideSize);
-	for (size_t i = 0; i < size; i++)
+	for (size_t i = 0; i < inputs.size(); i++)
 	{
 		if (i % 2 == 0)
 		{
@@ -168,15 +149,14 @@ void RecusiveInvertFFT(vector<complex<double>>& inputs, vector<complex<double>>&
 
 	// recursive call with omega^2 as (n/2)th primitive root of unity 
 	complex<double> currentInvertOmega = pow(invertOmega, 2);
-	vector<complex<double>> outputsEven;
+	vector<complex<double>> outputsEven(divideSize);
 	RecusiveInvertFFT(inputsEven, outputsEven, currentInvertOmega);
-	vector<complex<double>> outputsOdd;
+	vector<complex<double>> outputsOdd(divideSize);
 	RecusiveInvertFFT(inputsOdd, outputsOdd, currentInvertOmega);
 
 	complex<double> x = 1; // storing power of omega
 	
 	// combine step, using x = omega^i
-	outputs.resize(size);
 	for (size_t i = 0; i < divideSize; ++i)
 	{
 		outputs[i] = outputsEven[i] + x * outputsOdd[i];

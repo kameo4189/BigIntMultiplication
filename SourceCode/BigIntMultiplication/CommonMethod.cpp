@@ -30,15 +30,15 @@ void InitializeBaseConfig(unsigned int base)
 	NDIGIT = strBase.size() - 1;
 }
 
-void PrintBigInt(vector<unsigned int>& digits, unsigned int nDigit)
+void PrintBigInt(vector<unsigned int>& digits, size_t nDigit)
 {
 	cout << ConvertBigIntToString(digits, nDigit);
 }
 
-string ConvertBigIntToString(vector<unsigned int>& digits, unsigned int nDigit)
+string ConvertBigIntToString(vector<unsigned int>& digits, size_t nDigit)
 {
 	string result;
-	for (int i = digits.size() - 1; i >= 0; i--)
+	for (int i = static_cast<int>(digits.size() - 1); i >= 0; i--)
 	{
 		string strDigit = to_string(digits[i]);
 		if (i != digits.size() - 1)
@@ -106,6 +106,30 @@ void NormalizeSize(size_t inputSize, size_t& outputSize)
 	while (outputSize < inputSize) outputSize <<= 1;
 }
 
+void InitializeFFTInputVector(vector<unsigned int>& leftMultipliers,
+	vector<unsigned int>& rightMultipliers,
+	vector<complex<double>>& fftLeftMultiplier,
+	vector<complex<double>>& fftRightMultiplier,
+	vector<unsigned int>& result) 
+{
+	size_t maxSize = max(leftMultipliers.size(), rightMultipliers.size());
+	size_t fftSize = 1;
+	NormalizeSize(maxSize, fftSize);
+	fftSize <<= 1;
+	fftLeftMultiplier = vector<complex<double>>(fftSize);
+	fftRightMultiplier = vector<complex<double>>(fftSize);
+	result = vector<unsigned int>(fftSize);
+	for (size_t j = 0; j < leftMultipliers.size(); ++j)
+	{
+		fftLeftMultiplier[j] = leftMultipliers[j];
+	}
+
+	for (size_t j = 0; j < rightMultipliers.size(); ++j)
+	{
+		fftRightMultiplier[j] = rightMultipliers[j];
+	}
+}
+
 unsigned int CountBitFromSize(size_t size)
 {
 	unsigned int bitNum = 0;
@@ -132,7 +156,7 @@ size_t ReverseBit(unsigned int bitNum, size_t input)
 	return revBitOutput;
 }
 
-void ReadBigIntFromString(string stringOfNumber, unsigned int nDigit, vector<unsigned int>& digits)
+void ReadBigIntFromString(string stringOfNumber, size_t nDigit, vector<unsigned int>& digits)
 {
 	digits.clear();
 	if (stringOfNumber.size() < nDigit)
@@ -142,8 +166,9 @@ void ReadBigIntFromString(string stringOfNumber, unsigned int nDigit, vector<uns
 		return;
 	}
 
-	int i = stringOfNumber.size() - nDigit;
-	for (; i >= 0; i -= nDigit)
+	int i = static_cast<int>(stringOfNumber.size() - nDigit);
+	int numberOfDigits = static_cast<int>(nDigit);
+	for (; i >= 0; i -= numberOfDigits)
 	{
 		string digitString = stringOfNumber.substr(i, nDigit);
 		digits.push_back(stoul(digitString));
@@ -168,7 +193,7 @@ void ReadBigIntFromFile(vector<unsigned int>& leftMultiplier, vector<unsigned in
 	ReadBigIntFromString(strRightMultiplier, nDigit, rightMultiplier);
 }
 
-void ReadMultiBigIntFromFile(vector<vector<unsigned int>>& leftMultipliers, vector<vector<unsigned int>>& rightMultipliers, unsigned int nDigit, string fileName)
+void ReadMultiBigIntFromFile(vector<vector<unsigned int>>& leftMultipliers, vector<vector<unsigned int>>& rightMultipliers, size_t nDigit, string fileName)
 {
 	ifstream fin(fileName, ios::in);
 

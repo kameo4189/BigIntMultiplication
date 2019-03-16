@@ -35,18 +35,17 @@ void NotMeasurementTimeExecution(ExecutionMethodMode methodMode,
 	vector<vector<complex<double>>> fftLeftInput(leftMultipliers.size());
 	vector<vector<complex<double>>> fftRightInput(leftMultipliers.size());
 
-	results.clear();
-	results.resize(leftMultipliers.size());
 	switch (methodMode)
 	{
 	case ExecutionMethodMode::CONVOLUTION:
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
 			size_t maxSize = max(leftMultipliers[i].size(), rightMultipliers[i].size());
 			size_t resultSize = 2 * maxSize;
 			leftMultipliers[i].resize(resultSize);
 			rightMultipliers[i].resize(resultSize);
-			results[i].resize(resultSize);
+			results[i] = vector<unsigned int>(resultSize);
 		}
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
@@ -54,32 +53,23 @@ void NotMeasurementTimeExecution(ExecutionMethodMode methodMode,
 		}
 		break;
 	case ExecutionMethodMode::RECUSIVE_FFT:
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
-			MultiplyBigInt_RecusiveFFT(leftMultipliers[i], rightMultipliers[i], results[i], base, invertBase);
+			InitializeFFTInputVector(leftMultipliers[i], rightMultipliers[i],
+				fftLeftInput[i], fftRightInput[i], results[i]);
+		}
+		for (size_t i = 0; i < leftMultipliers.size(); i++)
+		{
+			MultiplyBigInt_RecusiveFFT(fftLeftInput[i], fftRightInput[i], results[i], base, invertBase);
 		}
 		break;
 	case ExecutionMethodMode::NON_RECUSIVE_FFT:
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
-			size_t maxSize = max(leftMultipliers[i].size(), rightMultipliers[i].size());
-			size_t fftSize = 1;
-			NormalizeSize(maxSize, fftSize);
-			fftSize <<= 1;
-			fftLeftInput[i].resize(fftSize);
-			fftRightInput[i].resize(fftSize);
-			for (size_t j = 0; j < leftMultipliers[i].size(); ++j)
-			{
-				fftLeftInput[i][j] = leftMultipliers[i][j];
-			}
-
-			for (size_t j = 0; j < rightMultipliers[i].size(); ++j)
-			{
-				fftRightInput[i][j] = rightMultipliers[i][j];
-			}
-			fftRightInput.resize(fftSize);
-
-			results[i].resize(fftSize);
+			InitializeFFTInputVector(leftMultipliers[i], rightMultipliers[i],
+				fftLeftInput[i], fftRightInput[i], results[i]);
 		}
 
 
@@ -108,21 +98,19 @@ long long MeasurementTimeExecution(ExecutionMethodMode methodMode,
 	vector<vector<complex<double>>> fftLeftInput(leftMultipliers.size());
 	vector<vector<complex<double>>> fftRightInput(leftMultipliers.size());
 
-	results.clear();
-	results.resize(leftMultipliers.size());
 	switch (methodMode)
 	{
 	case ExecutionMethodMode::CONVOLUTION:
+		t1 = high_resolution_clock::now();
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
 			size_t maxSize = max(leftMultipliers[i].size(), rightMultipliers[i].size());
 			size_t resultSize = 2 * maxSize;
 			leftMultipliers[i].resize(resultSize);
 			rightMultipliers[i].resize(resultSize);
-			results[i].resize(resultSize);
+			results[i] = vector<unsigned int>(resultSize);
 		}
-
-		t1 = high_resolution_clock::now();
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
 			MultiplyBigInt_Convolution(leftMultipliers[i], rightMultipliers[i], results[i], base, invertBase);
@@ -134,9 +122,15 @@ long long MeasurementTimeExecution(ExecutionMethodMode methodMode,
 		break;
 	case ExecutionMethodMode::RECUSIVE_FFT:
 		t1 = high_resolution_clock::now();
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
-			MultiplyBigInt_RecusiveFFT(leftMultipliers[i], rightMultipliers[i], results[i], base, invertBase);
+			InitializeFFTInputVector(leftMultipliers[i], rightMultipliers[i], 
+				fftLeftInput[i], fftRightInput[i], results[i]);
+		}
+		for (size_t i = 0; i < leftMultipliers.size(); i++)
+		{
+			MultiplyBigInt_RecusiveFFT(fftLeftInput[i], fftRightInput[i], results[i], base, invertBase);
 		}
 		t2 = high_resolution_clock::now();
 		executionTime = duration_cast<microseconds>(t2 - t1).count();
@@ -144,32 +138,19 @@ long long MeasurementTimeExecution(ExecutionMethodMode methodMode,
 		rightMultipliers = orgRightMultipliers;
 		break;
 	case ExecutionMethodMode::NON_RECUSIVE_FFT:
+		t1 = high_resolution_clock::now();
+		results.resize(leftMultipliers.size());
 		for (size_t i = 0; i < leftMultipliers.size(); i++)
 		{
-			size_t maxSize = max(leftMultipliers[i].size(), rightMultipliers[i].size());
-			size_t fftSize = 1;
-			NormalizeSize(maxSize, fftSize);
-			fftSize <<= 1;
-			fftLeftInput[i].resize(fftSize);
-			fftRightInput[i].resize(fftSize);
-			for (size_t j = 0; j < leftMultipliers[i].size(); ++j)
-			{
-				fftLeftInput[i][j] = leftMultipliers[i][j];
-			}
-
-			for (size_t j = 0; j < rightMultipliers[i].size(); ++j)
-			{
-				fftRightInput[i][j] = rightMultipliers[i][j];
-			}
-			fftRightInput.resize(fftSize);
+			InitializeFFTInputVector(leftMultipliers[i], rightMultipliers[i],
+				fftLeftInput[i], fftRightInput[i], results[i]);
 		}
-
-		t1 = high_resolution_clock::now();
 		for (size_t i = 0; i < fftLeftInput.size(); i++)
 		{
 			MultiplyBigInt_NonRecusiveFFT(fftLeftInput[i], fftRightInput[i], results[i], base, invertBase);
 		}
 		t2 = high_resolution_clock::now();
+
 		executionTime = duration_cast<microseconds>(t2 - t1).count();
 		break;
 	default:
